@@ -132,8 +132,8 @@ def _tower_loss(images, labels, num_classes, scope, reuse_variables=None):
     loss_name = re.sub('%s_[0-9]*/' % inception.TOWER_NAME, '', l.op.name)
     # Name each loss as '(raw)' and name the moving average version of the loss
     # as the original loss name.
-    tf.scalar_summary(loss_name +' (raw)', l)
-    tf.scalar_summary(loss_name, loss_averages.average(l))
+    tf.summary.scalar(loss_name +' (raw)', l)
+    tf.summary.scalar(loss_name, loss_averages.average(l))
 
   with tf.control_dependencies([loss_averages_op]):
     total_loss = tf.identity(total_loss)
@@ -268,20 +268,20 @@ def train(dataset):
     summaries.extend(input_summaries)
 
     # Add a summary to track the learning rate.
-    summaries.append(tf.scalar_summary('learning_rate', lr))
+    summaries.append(tf.summary.scalar('learning_rate', lr))
 
     # Add histograms for gradients.
     for grad, var in grads:
       if grad is not None:
         summaries.append(
-            tf.histogram_summary(var.op.name + '/gradients', grad))
+            tf.summary.histogram(var.op.name + '/gradients', grad))
 
     # Apply the gradients to adjust the shared variables.
     apply_gradient_op = opt.apply_gradients(grads, global_step=global_step)
 
     # Add histograms for trainable variables.
     for var in tf.trainable_variables():
-      summaries.append(tf.histogram_summary(var.op.name, var))
+      summaries.append(tf.summary.histogram(var.op.name, var))
 
     # Track the moving averages of all trainable variables.
     # Note that we maintain a "double-average" of the BatchNormalization
@@ -304,7 +304,7 @@ def train(dataset):
     saver = tf.train.Saver(tf.all_variables())
 
     # Build the summary operation from the last tower summaries.
-    summary_op = tf.merge_summary(summaries)
+    summary_op = tf.summary.merge(summaries)
 
     # Build an initialization operation to run below.
     init = tf.initialize_all_variables()
@@ -352,6 +352,6 @@ def train(dataset):
         summary_writer.add_summary(summary_str, step)
 
       # Save the model checkpoint periodically.
-      if step % 5000 == 0 or (step + 1) == FLAGS.max_steps:
+      if step % 500 == 0 or (step + 1) == FLAGS.max_steps:
         checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
         saver.save(sess, checkpoint_path, global_step=step)
